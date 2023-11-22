@@ -4,38 +4,46 @@
 
 class Player {
 private:
-	std::vector<unsigned int> currentWeaponAmmoOffsets = { 0x150 };
-	std::vector<unsigned int> healthOffsets = { 0xF8 };
-	std::vector<unsigned int> assaultDPSOffsets = { 0x360, 0xC, 0x10A };
+	std::vector<unsigned int> currentWeaponOffsets = { 0x364 };
+	std::vector<unsigned int> assaultOffsets = { 0x354 };
+	std::vector<unsigned int> pistolOffsets = { 0x340 };
+	std::vector<unsigned int> weaponAmmoOffsets = { 0x14, 0x0 };
+	std::vector<unsigned int> weaponMagazineOffsets = { 0x10, 0x0 };
+	std::vector<unsigned int> healthOffsets = { 0xEC };
 
 public:
-	uintptr_t healthAddr = 0;
-	uintptr_t currentWeaponAmmoAddr = 0;
-	uintptr_t assaultDPSAddr = 0;
-	uintptr_t decAmmoAddr = 0;
-	uintptr_t damageAddr = 0;
-	uintptr_t recoilAddr = 0;
-	uintptr_t playerAddr = 0; 
+	uintptr_t healthAddr;
+	uintptr_t assaultAddr;
+	uintptr_t assaultAmmoAddr;
+	uintptr_t assaultMagazineAddr;
+	uintptr_t pistolAddr;
+	uintptr_t pistolAmmoAddr;
+	uintptr_t pistolMagazineAddr;
+	uintptr_t decAmmoAddr;
+	uintptr_t playerAddr;
+	unsigned int health;
 
 	Player(uintptr_t modBaseAddress, HANDLE& procHandle) {
-		this->playerAddr = modBaseAddress + 0x109B74;
-		this->currentWeaponAmmoAddr = calculatePointersEx(this->playerAddr, this->currentWeaponAmmoOffsets, procHandle);
-		this->healthAddr = calculatePointersEx(this->playerAddr, this->healthOffsets, procHandle);
-		this->assaultDPSAddr = calculatePointersEx(this->playerAddr, this->assaultDPSOffsets, procHandle);
-		this->decAmmoAddr = modBaseAddress + 0x637E9;
-		this->damageAddr = modBaseAddress + 0x2CA5E;
-		this->recoilAddr = modBaseAddress + 0x63786;
+		this->playerAddr = modBaseAddress + 0x17E0A8;
+		this->decAmmoAddr = modBaseAddress + 0xC73EF;
+		this->assaultAddr = memory::calculateMultiLevelPointers(this->playerAddr, this->assaultOffsets, procHandle);
+		this->pistolAddr = memory::calculateMultiLevelPointers(this->playerAddr, this->pistolOffsets, procHandle);
+
+		this->assaultAmmoAddr = memory::calculateMultiLevelPointers(this->assaultAddr, this->weaponAmmoOffsets, procHandle);
+		this->assaultMagazineAddr = memory::calculateMultiLevelPointers(this->assaultAddr, this->weaponMagazineOffsets, procHandle);
+		this->pistolAmmoAddr = memory::calculateMultiLevelPointers(this->pistolAddr, this->weaponAmmoOffsets, procHandle);
+		this->pistolMagazineAddr = memory::calculateMultiLevelPointers(this->pistolAddr, this->weaponMagazineOffsets, procHandle);
+		this->healthAddr = memory::calculateMultiLevelPointers(this->playerAddr, this->healthOffsets, procHandle);
+		
+		ReadProcessMemory(procHandle, (PVOID)this->healthAddr, &this->health, sizeof(this->health), nullptr);
 	}
 };
 
 int main() {
-	// Proccess ID -> Module Base Address
-	DWORD procID = 0;
-	uintptr_t modBaseAddress = 0;
-	procID = getProcessID(L"ac_client.exe");
-	modBaseAddress = getModuleBaseAddress(procID, L"ac_client.exe");
+	DWORD procID = process::getProcessID(L"ac_client.exe");
+	uintptr_t modBaseAddress = process::getModuleBaseAddress(procID, L"ac_client.exe");
 
-	std::cout << "Welcome to Sphere!" << std::endl << "A Assault Cube External Cheat made by Ruhptura." << std::endl;
+	std::cout << "Welcome to Sphere!" << std::endl << "An Assault Cube External Cheat made by ruhptura." << std::endl;
 	std::cout << "--------------------------------------------" << std::endl;
 
 	if (!procID || !modBaseAddress) {
@@ -44,127 +52,71 @@ int main() {
 		return 0;
 	}
 
-	// Handle Proccess
-
-	HANDLE procHandle = 0;
-	procHandle = OpenProcess(PROCESS_ALL_ACCESS, NULL, procID);
-
-	// Base Address of Pointer Chain -> Address of Interest
-	
+	HANDLE procHandle = OpenProcess(PROCESS_ALL_ACCESS, NULL, procID);
 	Player player(modBaseAddress, procHandle);
-	unsigned int ammo = 0;
-	unsigned int health = 0;
-	unsigned int assaultDPS = 0;
 
-	if (player.healthAddr && player.currentWeaponAmmoAddr && player.assaultDPSAddr) {
-		std::cout << "Player found!" << std::endl;
-		std::cout << "Ammo address: 0x" << std::hex << player.currentWeaponAmmoAddr << std::endl;
-		std::cout << "Health address: 0x" << std::hex << player.healthAddr << std::endl;
-		std::cout << "Assault DPS address: 0x" << std::hex << player.assaultDPSAddr << std::endl;
-		std::cout << "--------------------------------------------" << std::endl;
-
-		ReadProcessMemory(procHandle, (BYTE*)player.currentWeaponAmmoAddr, &ammo, sizeof(ammo), nullptr);
-		ReadProcessMemory(procHandle, (BYTE*)player.healthAddr, &health, sizeof(health), nullptr);
-		ReadProcessMemory(procHandle, (BYTE*)player.assaultDPSAddr, &assaultDPS, sizeof(assaultDPS), nullptr);
-
-		std::cout << "Ammo: " << std::dec << ammo << std::endl;
-		std::cout << "Health: " << std::dec << health << std::endl;
-		std::cout << "Assault DPS: " << std::dec << assaultDPS << std::endl;
-		std::cout << "--------------------------------------------" << std::endl;
-
-		std::cout << "[?] F1: God Mode" << std::endl;
-		std::cout << "[?] F2: Increment Ammo" << std::endl;
-		std::cout << "[?] F3: High DPS" << std::endl;
-		std::cout << "[?] F4: No Recoil" << std::endl;
-		std::cout << "[?] F9: Close Sphere" << std::endl;
-		std::cout << "--------------------------------------------" << std::endl;
+	if (!player.healthAddr) {
+		std::cout << "Player not found." << std::endl << "Press any key to exit." << std::endl;
+		std::cin.get();
+		return 0;
 	}
 
-	// Cheat logic
+	std::cout << "Player found!" << std::endl;
+
+	std::cout << "Health: " << std::dec << player.health << std::endl;
+	std::cout << "--------------------------------------------" << std::endl;
+
+	std::cout << "[i] F1: God Mode ON/OFF" << std::endl;
+	std::cout << "[i] F2: Increment Ammo ON/OFF" << std::endl;
+	std::cout << "[i] F9: Close Sphere" << std::endl;
+	std::cout << "--------------------------------------------" << std::endl;
 
 	DWORD exitStatus = 0;
 	bool ammoActive = false;
 	bool godActive = false;
 	bool dpsActive = false;
 	bool recoilActive = false;
-	unsigned int newHealth = 1337;
+	unsigned int newValue = 1337;
 
 	while (GetExitCodeProcess(procHandle, &exitStatus) && exitStatus == STILL_ACTIVE) {
-		if (GetAsyncKeyState(VK_F1) & 1) { //HP
+		if (GetAsyncKeyState(VK_F1) & 1) { //God Mode
 			godActive = !godActive;
 
 			if (godActive) {
-				WriteProcessMemory(procHandle, (BYTE*)player.healthAddr, &newHealth, sizeof(newHealth), nullptr);
-
-				std::cout << "[+] God Mode Activated!" << std::endl;
+				WriteProcessMemory(procHandle, (PVOID)player.healthAddr, &newValue, sizeof(unsigned int), nullptr);
+				std::cout << "[+] God Mode ON" << std::endl;
 			}
 			else {
 				unsigned int normalHealth = 100;
-				WriteProcessMemory(procHandle, (BYTE*)player.healthAddr, &normalHealth, sizeof(normalHealth), nullptr);
-
-				std::cout << "[-] God Mode Deactivated!" << std::endl;
+				WriteProcessMemory(procHandle, (PVOID)player.healthAddr, &normalHealth, sizeof(unsigned int), nullptr);
+				std::cout << "[-] God Mode OFF" << std::endl;
 			}
-
-		}
-
-		if (GetAsyncKeyState(VK_F2) & 1) { //Ammo
-			if (!ammoActive) {
-				patchBytesEx((BYTE*)"\xFF\x06", (BYTE*)player.decAmmoAddr, 2, procHandle);
-				ammoActive = true;
-
-				std::cout << "[+] Increment Ammo Activated!" << std::endl;
-			}
-			else {
-				patchBytesEx((BYTE*)"\xFF\x0E", (BYTE*)player.decAmmoAddr, 2, procHandle);
-				ammoActive = false;
-
-				std::cout << "[-] Increment Ammo Deactivated!" << std::endl;
-			}
-		}
-
-		if (GetAsyncKeyState(VK_F3) & 1) { //DPS
-
-			dpsActive = !dpsActive;
-
-			if (dpsActive) {
-				unsigned int dps = 0;
-				WriteProcessMemory(procHandle, (BYTE*)player.assaultDPSAddr, &dps, 2, nullptr);
-
-				std::cout << "[+] High DPS Activated!" << std::endl;
-			}
-			else {
-				unsigned int dps = 120;
-				WriteProcessMemory(procHandle, (BYTE*)player.assaultDPSAddr, &dps, 2, nullptr);
-
-				std::cout << "[-] High DPS Deactivated!" << std::endl;
-			}
-		}
-
-		if (GetAsyncKeyState(VK_F4) & 1) { //Recoil
-			if (!recoilActive) {
-				recoilActive = true;
-
-				nopBytesEx((BYTE*)player.recoilAddr, 10, procHandle);
-
-				std::cout << "[+] No Recoil Activated!" << std::endl;
-			}
-			else {
-				recoilActive = false;
-
-				patchBytesEx((BYTE*)"\x50\x8D\x4C\x24\x1C\x51\x8B\xCE\xFF\xD2", (BYTE*)player.recoilAddr, 10, procHandle);
-
-				std::cout << "[-] No Recoil Deactivated!" << std::endl;
-			}
-		}
-
-		if (GetAsyncKeyState(VK_F9) & 1) { //Exit
-			return 0;
 		}
 
 		if (godActive) {
-			WriteProcessMemory(procHandle, (BYTE*)player.healthAddr, &newHealth, sizeof(newHealth), nullptr);
+			WriteProcessMemory(procHandle, (PVOID)player.healthAddr, &newValue, sizeof(unsigned int), nullptr);
 			Sleep(100);
 		}
+
+		if (GetAsyncKeyState(VK_F2) & 1) { //Ammo
+			ammoActive = !ammoActive;
+
+			if (ammoActive) {
+				memory::patchBytes((PVOID)"\xFF\x00", (PVOID)player.decAmmoAddr, 2, procHandle);
+				WriteProcessMemory(procHandle, (PVOID)player.assaultMagazineAddr, &newValue, sizeof(unsigned int), nullptr);
+				WriteProcessMemory(procHandle, (PVOID)player.pistolMagazineAddr, &newValue, sizeof(unsigned int), nullptr);
+				std::cout << "[+] Increment Ammo ON" << std::endl;
+			}
+			else {
+				unsigned int defaultMagazine = 50;
+				memory::patchBytes((PVOID)"\xFF\x08", (PVOID)player.decAmmoAddr, 2, procHandle);
+				WriteProcessMemory(procHandle, (PVOID)player.assaultMagazineAddr, &defaultMagazine, sizeof(unsigned int), nullptr);
+				WriteProcessMemory(procHandle, (PVOID)player.pistolMagazineAddr, &defaultMagazine, sizeof(unsigned int), nullptr);
+				std::cout << "[-] Increment Ammo OFF" << std::endl;
+			}
+		}
+
+		if (GetAsyncKeyState(VK_F9) & 1) return 0; //Exit
 	}
 
 	std::cin.get();

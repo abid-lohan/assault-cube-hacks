@@ -25,7 +25,7 @@ DWORD getProcessID(const char* procName) {
 }
 
 int main() {
-	const char* pathToDLL = "C:/your/path/insphere-ac.dll"; // Change the DLL here
+	const char* pathToDLL = "C:/insphere-ac.dll"; // Change the DLL here (full path)
 	DWORD procID = 0;
 
 	while (!procID) {
@@ -46,12 +46,17 @@ int main() {
 
 		HANDLE threadHandle = CreateRemoteThread(procHandle, 0, 0, (LPTHREAD_START_ROUTINE)LoadLibraryA, loc, 0, 0);
 
-		if (threadHandle) CloseHandle(threadHandle);
+		if (threadHandle){
+			std::cout << "Remote Thread successfully created." << std::endl;
+			CloseHandle(threadHandle);
+		}
 	}
 
 	if (procHandle) CloseHandle(procHandle);
 
-	std::cout << "Exit..." << std::endl;
+	std::cout << "Process Handle and Thread Handle closed." << std::endl;
+	std::cout << "READY!" << std::endl;
+	std::cin.get();
 
 	return 0;
 }

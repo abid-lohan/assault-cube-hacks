@@ -1,12 +1,10 @@
 # Assault Cube Hacks
 
-This is a Assault Cube 1.2.0.2 cheat. It’s called **sphere**, and was created with the purpose of studies only. **Please don’t use it on multiplayer mode**, if you want to cheat, don’t do it with other players! Play on offline mode with bots!
+This is a Assault Cube 1.3.0.2 cheat. It’s called **sphere**, and was created with the purpose of studies only. **Please don’t use it on multiplayer mode**, if you want to cheat, don’t do it with other players! Play on offline mode with bots!
 
-Here you can find the external version, the internal version and the dll injector to use the internal version. The dll injector won’t work unless you change the path on the code and compile it again.
+Here you can find the external version (**sphere-ac**), the python external version (**python-sphere-ac**), the internal version (**insphere-ac**) and the dll injector (**simple-dll-injector**) to use the internal version.
 
-Sphere has four basic utilities:
+Sphere has two basic utilities:
 
-- God Mode
-- Increment Ammo
-- High DPS
-- No Recoil
+- F1: God Mode
+- F2: Increment Ammo
