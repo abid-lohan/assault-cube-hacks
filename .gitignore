@@ -1,13 +1,13 @@
-.git
+.gitignore
 
-./sphere-ac/Release
-./sphere-ac/.vs
-./sphere-ac/sphere-ac/Release
+sphere-ac/Release/
+sphere-ac/.vs/
+sphere-ac/sphere-ac/Release/
 
-./insphere-ac/Release
-./insphere-ac/.vs
-./insphere-ac/insphere-ac/Release
+insphere-ac/Release/
+insphere-ac/.vs/
+insphere-ac/insphere-ac/Release/
 
-./simple-dll-injector/Release
-./simple-dll-injector/.vs
-./simple-dll-injector/simple-dll-injector/Release
+simple-dll-injector/Release/
+simple-dll-injector/.vs/
+simple-dll-injector/simple-dll-injector/Release/
